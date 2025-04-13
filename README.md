@@ -1,6 +1,6 @@
-# Simple Photo Annotation Viewer
+# Photo Annotation Project
 
-A minimal application for viewing and interacting with annotations on historical photographs.
+This is a project of the Interaction Design program in the Corcron at GWU. This is for a class called Collaborative Design Projects. That is an interactive photo annotation viewer of a 19th century photograph of a Native American from the Zuni People. It has been annotated by a present day member of the Zuni Nation.
 
 ## Features
 
