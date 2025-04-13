@@ -1,0 +1,103 @@
+{
+    "typography": {
+      "adobeFontsLink": "<link rel=\"stylesheet\" href=\"https://use.typekit.net/qow3nnx.css\">",
+      "fonts": {
+        "primary": {
+          "header": {
+            "family": "P22 Freely",
+            "weights": ["Regular"]
+          },
+          "body": {
+            "family": "URW DIN",
+            "weights": ["Regular", "Demi"]
+          }
+        },
+        "secondary": {
+          "quotes": {
+            "family": "Felt Tip Roman",
+            "weights": ["Regular"]
+          }
+        }
+      },
+      "usage": {
+        "primaryHeaderText": "P22 Freely",
+        "primaryBodyText": "URW DIN",
+        "quotesText": "Felt Tip Roman"
+      }
+    },
+    "colors": {
+      "objectLabels": {
+        "orange": {
+          "hex": "#CE9579",
+          "rgb": [206, 149, 121]
+        },
+        "purple": {
+          "hex": "#9B86A3",
+          "rgb": [155, 134, 163]
+        },
+        "beige": {
+          "hex": "#BFB6A3",
+          "rgb": [191, 182, 163]
+        }
+      },
+      "sectionLabels": {
+        "blue": {
+          "hex": "#8EC1BF",
+          "rgb": [142, 193, 191]
+        }
+      },
+      "panels": {
+        "attributionGreen": {
+          "hex": "#2C3925",
+          "rgb": [44, 57, 37]
+        }
+      },
+      "backgrounds": {
+        "black": {
+          "hex": "#231F20",
+          "rgb": [35, 31, 32]
+        },
+        "altBlack": {
+          "hex": "#1A1A1A",
+          "rgb": [26, 26, 26]
+        },
+        "offWhite": {
+          "hex": "#F5F7DC",
+          "rgb": [245, 247, 220]
+        }
+      },
+      "accents": {
+        "desertSandOrange": {
+          "hex": "#D16141",
+          "rgb": [209, 97, 65]
+        },
+        "deepPurple": {
+          "hex": "#5F3833",
+          "rgb": [95, 56, 51]
+        }
+      }
+    },
+    "tailwindConfig": {
+      "extend": {
+        "fontFamily": {
+          "p22": ["P22 Freely", "serif"],
+          "urwdin": ["URW DIN", "sans-serif"],
+          "felttip": ["Felt Tip Roman", "cursive"]
+        },
+        "colors": {
+          "gallery": {
+            "orange": "#CE9579",
+            "purple": "#9B86A3",
+            "blue": "#8EC1BF",
+            "green": "#2C3925",
+            "beige": "#BFB6A3",
+            "black": "#231F20",
+            "altBlack": "#1A1A1A",
+            "offWhite": "#F5F7DC",
+            "desertOrange": "#D16141",
+            "deepPurple": "#5F3833"
+          }
+        }
+      }
+    }
+  }
