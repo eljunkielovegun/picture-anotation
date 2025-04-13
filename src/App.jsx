@@ -81,30 +81,32 @@ function AppContent() {
   }, [location]);
   
   return (
-    <div className="app-container" style={{ backgroundColor: '#BFB6A3', overflow: 'hidden' }}>
-      <Routes>
-        <Route path="/fonts" element={<FontTester />} />
-        <Route index element={<HomePage />} />
-        <Route path="photo" element={<PhotoPage />} /> 
-        <Route path="annotation" element={<AnnotationPage />} />
-        <Route path="interview" element={<InterviewPage />} />
-      </Routes>
-      
-      {/* Preload annotation page when on photo page */}
-      {showPhotoPage && (
-        <div style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: '100%', 
-          opacity: 0,
-          pointerEvents: 'none',
-          width: '100vw',
-          height: '100vh'
-        }}>
-          <AnnotationPage isPreloaded={true} />
-        </div>
-      )}
-    </div>
+    <>
+      <div className="app-container relative" style={{ backgroundColor: '#BFB6A3', overflow: 'hidden' }}>
+        <Routes>
+          <Route path="/fonts" element={<FontTester />} />
+          <Route index element={<HomePage />} />
+          <Route path="photo" element={<PhotoPage />} /> 
+          <Route path="annotation" element={<AnnotationPage />} />
+          <Route path="interview" element={<InterviewPage />} />
+        </Routes>
+        
+        {/* Preload annotation page when on photo page */}
+        {showPhotoPage && (
+          <div style={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: '100%', 
+            opacity: 0,
+            pointerEvents: 'none',
+            width: '100vw',
+            height: '100vh'
+          }}>
+            <AnnotationPage isPreloaded={true} />
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 

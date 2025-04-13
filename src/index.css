@@ -341,3 +341,21 @@
 .corner-label {
   animation-delay: 0.9s;
 }
+
+/* AnnotationPanel animations */
+@keyframes slideInFromRight {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.annotation-panel {
+  animation: slideInFromRight 0.5s ease-out forwards;
+  /* Ensure panel is properly rendered */
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: subpixel-antialiased;
+}

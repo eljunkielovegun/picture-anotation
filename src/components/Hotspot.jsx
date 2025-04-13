@@ -1,6 +1,8 @@
-export default function Hotspot({ top, left, label, onClick, id }) {
-  // Apply correction for x-axis offset (4vw) in the opposite direction
-  const adjustedLeft = left - 4;
+export default function Hotspot({ top, left, label, onClick, id, hidden = false }) {
+  // Keep the exact percentages provided - no adjustments
+  // These are already percentages from the ImageViewer component
+  const adjustedTop = top ;
+  const adjustedLeft = left - 8;
   
   // Calculate a unique phase offset for each dot based on its ID
   // We'll start with PI/1.6 and add incremental phases for each dot
@@ -11,11 +13,19 @@ export default function Hotspot({ top, left, label, onClick, id }) {
   // Generate a unique animation ID to prevent conflicts
   const animationId = `sine-fade-${id || Math.floor(Math.random() * 1000)}`;
   
+  // Don't render if hidden
+  if (hidden) {
+    return null;
+  }
+  
   return (
     <button
-      onClick={onClick}
-      className="absolute z-10 pointer-events-auto p-0 m-0 border-0 bg-transparent outline-none"
-      style={{ top: `${top}%`, left: `${adjustedLeft}%`, transform: 'translate(-50%, -50%)', backgroundColor: 'transparent' }}
+      onClick={(e) => {
+        console.log(`Hotspot clicked: ${label}`);
+        if (onClick) onClick(e);
+      }}
+      className="absolute z-50 pointer-events-auto p-0 m-0 border-0 bg-transparent outline-none cursor-pointer"
+      style={{ top: `${adjustedTop}%`, left: `${adjustedLeft}%`, transform: 'translate(-50%, -50%)', backgroundColor: 'transparent' }}
       aria-label={label}
     >
       {/* White circle SVG with sine wave fade animation and glow effect */}

@@ -6,6 +6,19 @@
   text-align: center;
 }
 
+/* Panel animation styles */
+@keyframes slideInFromRight {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(0); }
+}
+
+.annotation-panel {
+  animation: slideInFromRight 0.5s ease-out forwards;
+  will-change: transform;
+  height: auto;
+  max-height: 90vh;
+}
+
 /* Adobe Typekit font classes */
 .font-p22-freely {
   font-family: p22-freely, serif !important;
