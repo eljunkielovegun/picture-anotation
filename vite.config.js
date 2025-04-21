@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react' // or whatever plugin you use
 
-// https://vite.dev/config/
-export default defineConfig({
-  base: './',
-  plugins: [react()],
+// Use conditional base path - empty for dev, repo name for production
+export default defineConfig(({ command }) => {
+  const base = command === 'serve' ? '/' : '/picture-anotation/';
+  
+  return {
+    base,
+    plugins: [react()]
+  }
 })

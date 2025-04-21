@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getAssetPath } from '../utils/assetUtils';
 import ImageViewer from '../components/ImageViewer';
 import AnnotationPanel from '../components/AnnotationPanel';
 import NewHomeButton from '../components/NewHomeButton';
+import MarkerSelector from '../components/MarkerSelector';
+
 import photoData from '../data/annotations';
 
 export default function AnnotationPage({ isPreloaded = false }) {
@@ -13,6 +16,7 @@ export default function AnnotationPage({ isPreloaded = false }) {
   const [touchEnd, setTouchEnd] = useState(null);
   const [selectedAnnotation, setSelectedAnnotation] = useState(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [markerType, setMarkerType] = useState('default');
   
   // Listen for custom event to close the panel
   useEffect(() => {
@@ -188,6 +192,12 @@ export default function AnnotationPage({ isPreloaded = false }) {
     setIsDragging(false);
   };
   
+  // Handler for marker type change
+  const handleMarkerChange = (newMarkerType) => {
+    console.log("Marker type changed to:", newMarkerType);
+    setMarkerType(newMarkerType);
+  };
+  
   // Don't add event handlers if this is a preloaded instance
   const eventHandlers = isPreloaded ? {} : {
     onTouchStart,
@@ -252,10 +262,11 @@ export default function AnnotationPage({ isPreloaded = false }) {
           }}
         >
           <ImageViewer 
-            image="/assets/images/zuniEagle.jpg" 
+            image={getAssetPath('assets/images/zuniEagle.jpg')} 
             fullViewport={true} 
             onSelectAnnotation={handleSelectAnnotation}
             isPanelOpen={isPanelOpen}
+            markerType={markerType}
           />
         </div>
         
@@ -299,6 +310,11 @@ export default function AnnotationPage({ isPreloaded = false }) {
           
           
           
+      </div>
+      
+      {/* Add MarkerSelector component */}
+      <div className="absolute left-[2vw]  z-50" onClick={(e) => e.stopPropagation()}>
+        <MarkerSelector onSelect={handleMarkerChange} currentMarker={markerType} />
       </div>
       
       {/* Using NewHomeButton instead */}

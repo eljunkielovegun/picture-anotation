@@ -99,7 +99,7 @@
     font-weight: normal;
     letter-spacing: 0.05em;
     margin-bottom: 1rem;
-    transform: translateX(-5vw) !important;
+    transform: translate(-5vw, 5vw) !important;
   }
 
   .author {
@@ -109,7 +109,7 @@
     text-align: right;
     align-self: flex-end;
     margin-top: 1rem;
-    transform: translateX(-5vw) !important;
+    transform: translate(-2vw, 2vw) !important;
   }
 
   .cta-button {
@@ -195,24 +195,24 @@
   /* Label positioning */
   .lava-stone {
     top: 5vh;
-    right: 15vw;
+    right: 12vw;
   }
 
   .lava-stone .arrow {
     top: -20px;
-    right: -80px;
-    transform: rotate(-20deg);
+    right: -100px;
+    transform: rotate(-30deg);
   }
 
   .eagle {
-    bottom: 32vh;
-    right: 12vw;
+    bottom: 45vh;
+    right: 13vw;
   }
 
   .eagle .arrow {
-    bottom: -20px;
-    right: -80px;
-    transform: rotate(20deg);
+    bottom: -30px;
+    right: -100px;
+    transform: rotate(35deg);
   }
 
   .frame {
@@ -221,16 +221,16 @@
   }
 
   .frame .arrow {
-    top: -0px;
-    left: -80px;
+    top: -15px;
+    left: -100px;
     transform: rotate(20deg);
   }
 
-  /* PhotoPage styles */
+  /* PhotoPage styles
   .photopage {
     width: 100vw;
     height: 100vh;
-    background-color: #F5F7DC; /* off-white */
+    background-color: #F5F7DC;
     color: #231F20;
     font-family: "URW DIN", sans-serif;
     overflow: hidden;
@@ -245,7 +245,7 @@
     left: 10vw;
     width: 50vw;
     height: 50vh;
-    border: 10px solid #BFB6A3; /* beige frame */
+    border: 10px solid #BFB6A3;
     box-shadow: 0 0 16px rgba(0, 0, 0, 0.15);
     overflow: hidden;
   }
@@ -306,8 +306,8 @@
     text-align: center;
     font-size: 0.8rem;
     font-style: italic;
-    color: #5F3833; /* deep purple */
-  }
+    color: #5F3833; 
+  } */
 }
 
 /* Animation for fade-in effect */

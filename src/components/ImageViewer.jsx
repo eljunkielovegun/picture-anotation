@@ -2,8 +2,11 @@ import { useRef, useState, useEffect } from 'react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import Hotspot from './Hotspot';
 import photoData from '../data/annotations';
+import { markerTypes } from '../data/markerTypes'; 
+import MarkerSelector from './MarkerSelector';
 
-export default function ImageViewer({ image, fullViewport = false, onSelectAnnotation, isPanelOpen = false }) {
+export default function ImageViewer({ image, fullViewport = false, onSelectAnnotation, isPanelOpen = false, markerType = 'default' }) {
+  // Use markerType from props instead of internal state
   const transformRef = useRef(null);
   const imageRef = useRef(null);
   const [zoomedOnHotspot, setZoomedOnHotspot] = useState(null);
@@ -141,8 +144,12 @@ export default function ImageViewer({ image, fullViewport = false, onSelectAnnot
     }
   };
 
+  // Marker type is now received from props
+
   return (
     <div className={`relative ${fullViewport ? 'w-full h-full m-0 p-0' : 'w-full max-w-4xl mx-auto bg-white rounded-lg shadow-xl p-4'}`}>
+      {/* MarkerSelector has been moved to AnnotationPage */}
+      
       <div className={`relative ${fullViewport ? 'w-full h-full m-0 p-0' : ''}`}>
         <TransformWrapper
           initialScale={1}
@@ -184,7 +191,7 @@ export default function ImageViewer({ image, fullViewport = false, onSelectAnnot
                       }}
                     />
                     
-                    {/* Original hotspots */}
+                    {/* Original hotspots - now passing markerType */}
                     {annotations.map((a) => (
                       <Hotspot
                         key={a.id}
@@ -193,6 +200,7 @@ export default function ImageViewer({ image, fullViewport = false, onSelectAnnot
                         left={a.left}
                         label={a.name}
                         hidden={zoomedOnHotspot !== null}
+                        markerType={markerType}
                         onClick={() => handleHotspotClick(a)}
                       />
                     ))}

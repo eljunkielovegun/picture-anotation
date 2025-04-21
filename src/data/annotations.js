@@ -11,10 +11,22 @@ export const photoData = {
       "archiveNo": "Accession Number: P.48.1.3"
     }
   },
+  "curtis-photo": {
+    "titleText": "Curtis Quam",
+    "title": "Curtis Quam at the Great Sand Dunes National Park",
+    "bio": "Curtis Quam was born and raised in Zuni, NM. He is a Museum Technician and Cultural Educator (Museum Head) at the A:shiwi A:wan Museum & Heritage Center, which he has been with since 2002.",
+    "credit": {
+      "photographer": "NPS/Patrick Myers",
+      "title": "Curtis Quam at the Great Sand Dunes National Park",
+      "year": "2023",
+      "medium": "digital photograph",
+    }
+  },
   "intro": {
     "paragraphs": [
       "Curtis Quam, a representative of the Zuni peoples, shared his personal handwritten annotations of this image titled Zuni Eagle Cage. They are a powerful interpretation of what was captured by John K. Hillers.",
-      "Eagles are considered to be sacred in Zuni culture and traditions, and for centuries they were kept in small aviaries and cages by elders. Their feathers were gathered by the Zuni for ceremonial purposes, and they continue to be a sacred item in their spiritual traditions."
+      "Eagles are considered to be sacred in Zuni culture and traditions, and for centuries they were kept in small aviaries and cages by elders. Their feathers were gathered by the Zuni for ceremonial purposes, and they continue to be a sacred item in their spiritual traditions.",
+      "These annotations are transcriptions from a conversation with Curtis, discussing the significance of various elements in the image."
     ]
   },
   "annotations": [

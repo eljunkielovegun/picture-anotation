@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import PhotoPage from './pages/PhotoPage';
@@ -28,15 +28,15 @@ const FontTester = () => (
 function App() {
   // Log available fonts for debugging
   useEffect(() => {
-    console.log("Checking loaded fonts...");
-    try {
-      document.fonts.ready.then(() => {
-        console.log("All fonts loaded:", document.fonts);
-        console.log("Available font families:", [...document.fonts].map(f => f.family));
-      });
-    } catch (e) {
-      console.error("Error checking fonts:", e);
-    }
+    // console.log("Checking loaded fonts...");
+    // try {
+    //   document.fonts.ready.then(() => {
+    //     console.log("All fonts loaded:", document.fonts);
+    //     console.log("Available font families:", [...document.fonts].map(f => f.family));
+    //   });
+    // } catch (e) {
+    //   console.error("Error checking fonts:", e);
+    // }
   }, []);
 
   return (
