@@ -11,30 +11,43 @@ export default function ImageViewer({
   onSelectAnnotation, 
   isPanelOpen = false, 
   markerType = 'default',
-  initialFullScreen = false // New prop to indicate we should start in full screen mode
+  initialFullScreen = false, // New prop to indicate we should start in full screen mode
+  onMarkerVisibilityChange = null, // Callback when markers enter/exit viewport
+  transformRef = null, // Reference to pass to the TransformWrapper
+  onZoomChange = null // Callback for zoom state change
 }) {
   // Use markerType from props instead of internal state
-  const transformRef = useRef(null);
+  const internalTransformRef = useRef(null);
   const imageRef = useRef(null);
   const [zoomedOnHotspot, setZoomedOnHotspot] = useState(null);
   const [scale, setScale] = useState(1); // Always start at normal scale
   const pendingZoomRef = useRef(null);
+  const [visibleMarkers, setVisibleMarkers] = useState([]);
   
   // Handle panel close events
   useEffect(() => {
     // Reset on panel close
-    if (!isPanelOpen && transformRef.current) {
-      transformRef.current.resetTransform();
+    const activeTransformRef = transformRef?.current ? transformRef : internalTransformRef;
+    if (!isPanelOpen && activeTransformRef.current) {
+      activeTransformRef.current.resetTransform();
       setZoomedOnHotspot(null);
     }
-  }, [isPanelOpen]);
+  }, [isPanelOpen, transformRef]);
+  
+  // Sync zoomedOnHotspot state with parent component
+  useEffect(() => {
+    if (onZoomChange) {
+      onZoomChange(zoomedOnHotspot);
+    }
+  }, [zoomedOnHotspot, onZoomChange]);
   
   // Setup event listener for zoom reset and handle initialFullScreen
   useEffect(() => {
     // Listen for external reset requests
     const handleResetZoom = () => {
-      if (transformRef.current) {
-        transformRef.current.resetTransform();
+      const activeTransformRef = transformRef?.current ? transformRef : internalTransformRef;
+      if (activeTransformRef.current) {
+        activeTransformRef.current.resetTransform();
         setZoomedOnHotspot(null);
       }
     };
@@ -49,17 +62,79 @@ export default function ImageViewer({
     return () => {
       document.body.removeEventListener('resetImageZoom', handleResetZoom);
     };
-  }, []); // Only run on mount
+  }, [transformRef]);
+  
+  // Using a simpler approach to track marker visibility since IntersectionObserver
+  // had implementation issues
+  
+  // Track pan and zoom to update visible markers
+  const checkMarkerVisibility = () => {
+    if (zoomedOnHotspot !== null || !imageRef.current) return;
+    
+    const imageRect = imageRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Consider image boundaries as the content area
+    const contentLeft = imageRect.left;
+    const contentTop = imageRect.top;
+    const contentRight = imageRect.right;
+    const contentBottom = imageRect.bottom;
+    
+    // Calculate which markers are visible based on their position
+    const newVisibleMarkers = annotations
+      .filter(a => {
+        // Calculate marker's absolute position based on image dimensions
+        const markerX = contentLeft + (a.left / 100) * imageRect.width;
+        const markerY = contentTop + (a.top / 100) * imageRect.height;
+        
+        // Check if marker is within viewport
+        return (
+          markerX >= 0 && 
+          markerX <= viewportWidth && 
+          markerY >= 0 && 
+          markerY <= viewportHeight
+        );
+      })
+      .map(a => a.id);
+    
+    if (JSON.stringify(newVisibleMarkers) !== JSON.stringify(visibleMarkers)) {
+      setVisibleMarkers(newVisibleMarkers);
+      
+      // Call callback if provided
+      if (onMarkerVisibilityChange) {
+        onMarkerVisibilityChange(newVisibleMarkers);
+      }
+    }
+    
+  };
+  
+  
+  // Check marker visibility when image loads or when scale/position changes
+  useEffect(() => {
+    if (imageRef.current) {
+      imageRef.current.addEventListener('load', checkMarkerVisibility);
+      return () => {
+        if (imageRef.current) {
+          imageRef.current.removeEventListener('load', checkMarkerVisibility);
+        }
+      };
+    }
+  }, []);
   
   // Function to apply zoom - will be called directly when panel opens
   const applyZoom = (coords, id) => {
-    if (!transformRef.current || !imageRef.current) return;
+    // We'll update the zoom state at the end of this function
+  
+  // Use the external or internal transform ref
+  const activeTransformRef = transformRef?.current ? transformRef : internalTransformRef;
+  if (!activeTransformRef.current || !imageRef.current) return;
     
     // Set zoom level for tight focus on hotspot
     const zoomLevel = 5;
     
     // Get functions from transform ref
-    const { resetTransform, setTransform } = transformRef.current;
+    const { resetTransform, setTransform } = activeTransformRef.current;
     
     // Always reset first to ensure we're starting from a clean state
     resetTransform();
@@ -109,6 +184,11 @@ export default function ImageViewer({
         
         // Show only the current hotspot
         setZoomedOnHotspot(id);
+        
+        // Update the zoom state through callback if provided
+        if (onZoomChange) {
+          onZoomChange(id);
+        }
       }
     }, 50);
   };
@@ -148,8 +228,9 @@ export default function ImageViewer({
     // If we're zoomed in and the panel is open, this click should close the panel
     if (zoomedOnHotspot !== null && isPanelOpen) {
       // Reset zoom
-      if (transformRef.current) {
-        transformRef.current.resetTransform();
+      const activeTransformRef = transformRef?.current ? transformRef : internalTransformRef;
+      if (activeTransformRef.current) {
+        activeTransformRef.current.resetTransform();
       }
       setZoomedOnHotspot(null);
       
@@ -215,7 +296,7 @@ export default function ImageViewer({
           doubleClick={{ 
             disabled: true // Disable built-in double-click to handle it ourselves
           }}
-          ref={transformRef}
+          ref={transformRef || internalTransformRef}
           centerOnInit={true}
           limitToBounds={false}
           centerZoomedOut={true}
@@ -226,6 +307,12 @@ export default function ImageViewer({
             if (state.scale < 2) {
               setZoomedOnHotspot(null);
             }
+            // Check marker visibility on zoom
+            checkMarkerVisibility();
+          }}
+          onPanning={({ state }) => {
+            // Manually check marker visibility on panning
+            checkMarkerVisibility();
           }}
           onDoubleClick={(e) => {
             // Manual double-click handler
@@ -298,6 +385,7 @@ export default function ImageViewer({
                         hidden={zoomedOnHotspot !== null}
                         markerType={markerType}
                         onClick={() => handleHotspotClick(a)}
+                        isVisible={visibleMarkers.includes(a.id)}
                       />
                     ))}
                   </div>

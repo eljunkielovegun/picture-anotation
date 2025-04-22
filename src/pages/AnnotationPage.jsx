@@ -4,6 +4,7 @@ import { getAssetPath } from '../utils/assetUtils';
 import ImageViewer from '../components/ImageViewer';
 import AnnotationPanel from '../components/AnnotationPanel';
 import NewHomeButton from '../components/NewHomeButton';
+import BackButton from '../components/BackButton';
 import MarkerSelector from '../components/MarkerSelector';
 
 import photoData from '../data/annotations';
@@ -18,6 +19,7 @@ export default function AnnotationPage({ isPreloaded = false }) {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [markerType, setMarkerType] = useState('default');
   const [isFullScreen, setIsFullScreen] = useState(false); // Track if we're in full screen mode
+  const [zoomedOnHotspot, setZoomedOnHotspot] = useState(null); // Track which hotspot is zoomed on
   
   // Listen for custom events
   useEffect(() => {
@@ -70,8 +72,17 @@ export default function AnnotationPage({ isPreloaded = false }) {
     // Load content first but don't animate yet
     setSelectedAnnotation(annotation);
     
+    // Set this hotspot as the one being zoomed on
+    setZoomedOnHotspot(annotation.id);
+    
     // Immediately open the panel
     setIsPanelOpen(true);
+  };
+  
+  // Function to handle marker visibility changes
+  const handleMarkerVisibilityChange = (visibleMarkers) => {
+    console.log("Markers currently visible:", visibleMarkers);
+    // We can implement custom behavior here when we need to react to marker visibility changes
   };
   
   // Function to navigate back to photo page
@@ -98,7 +109,20 @@ export default function AnnotationPage({ isPreloaded = false }) {
   const handleClosePanel = () => {
     setIsPanelOpen(false);
     setSelectedAnnotation(null);
+    setZoomedOnHotspot(null);
+    
+    // Reset zoom in the ImageViewer if available
+    if (transformRef.current) {
+      transformRef.current.resetTransform();
+    }
+    
+    // Also dispatch the resetImageZoom event for better compatibility
+    const resetEvent = new CustomEvent('resetImageZoom');
+    document.body.dispatchEvent(resetEvent);
   };
+  
+  // Reference to the TransformWrapper in ImageViewer
+  const transformRef = useRef(null);
   
   // Swipe and double tap handlers for going back to photo page
   const onTouchStart = (e) => {
@@ -318,6 +342,9 @@ export default function AnnotationPage({ isPreloaded = false }) {
             isPanelOpen={isPanelOpen}
             markerType={markerType}
             initialFullScreen={isFullScreen} // Pass the fullscreen flag from PhotoPage
+            onMarkerVisibilityChange={handleMarkerVisibilityChange}
+            transformRef={transformRef} // Pass the transform ref
+            onZoomChange={setZoomedOnHotspot} // Pass the zoom state handler
           />
         </div>
         
@@ -359,9 +386,13 @@ export default function AnnotationPage({ isPreloaded = false }) {
         )}
       </div>
       
-      {/* Using NewHomeButton with pointer-events enabled */}
+      {/* Show either BackButton or NewHomeButton depending on state */}
       <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1001, pointerEvents: 'auto' }}>
-        <NewHomeButton key="annotationPageHomeButton" />
+        {zoomedOnHotspot !== null || isPanelOpen ? (
+          <BackButton onClick={handleClosePanel} key="annotationPageBackButton" />
+        ) : (
+          <NewHomeButton key="annotationPageHomeButton" />
+        )}
       </div>
       </div>
     </>

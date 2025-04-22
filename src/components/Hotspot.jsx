@@ -8,7 +8,8 @@ export default function Hotspot({
   onClick, 
   id, 
   hidden = false,
-  markerType = 'default' // Default to animated circle if not specified
+  markerType = 'default', // Default to animated circle if not specified
+  isVisible = false
 }) {
   // Hotspot position info
   
@@ -58,7 +59,8 @@ export default function Hotspot({
         backgroundColor: 'transparent',
         width: '40px',  /* Make hitbox bigger */
         height: '40px',
-        pointerEvents: 'auto'
+        pointerEvents: 'auto',
+        opacity: isVisible ? 1 : 0.85 // Subtle highlight for visible markers
       }}
       aria-label={label}
     >

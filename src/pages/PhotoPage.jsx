@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getAssetPath } from '../utils/assetUtils';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import NewHomeButton from '../components/NewHomeButton';
+import IntroCarousel from '../components/IntroCarousel';
 
 // Preload the annotation page image on component mount
 const preloadImage = new Image();
@@ -49,6 +50,7 @@ export default function PhotoPage() {
   const navigate = useNavigate();
   const { titleText, credit } = photoData.photo;
   const { paragraphs } = photoData.intro;
+  const curtisData = photoData["curtis-photo"];
   const transformRef = React.useRef(null);
   const photoImageRef = React.useRef(null);
   const [touchStart, setTouchStart] = useState(null);
@@ -215,6 +217,11 @@ export default function PhotoPage() {
         }} 
         className={`w-screen h-screen relative font-urwdin flex justify-center ${isExpanded ? 'overflow-visible expanded-view' : 'overflow-hidden'}`}
         onClick={handleBackgroundClick}
+        >
+      {/* LEFT COLUMN - Photo section (60% width with padding) */}
+       <div 
+        className={isExpanded ?  'h-screen flex flex-col relative overflow-visible w-1/4 items-start translate-y-[-3.5vw]'   :'h-screen flex flex-col relative overflow-visible' }
+        style={isExpanded ? { paddingLeft: '0vw', paddingBottom: '0vw' }:{ paddingLeft: '0vw', paddingTop: '0vw' } }
         onTouchStart={!isExpanded ? onTouchStart : undefined}
         onTouchMove={!isExpanded ? onTouchMove : undefined}
         onTouchEnd={!isExpanded ? onTouchEnd : undefined}
@@ -222,12 +229,6 @@ export default function PhotoPage() {
         onMouseMove={!isExpanded ? onMouseMove : undefined}
         onMouseUp={!isExpanded ? onMouseUp : undefined}
         onMouseLeave={!isExpanded ? onMouseLeave : undefined}
-        >
-      {/* LEFT COLUMN - Photo section (60% width with padding) */}
-       <div className={isExpanded ?  'h-screen flex flex-col relative overflow-visible w-1/4 items-start translate-y-[-3.5vw]'   :'h-screen flex flex-col relative overflow-visible' 
-       
-       }
-       style={isExpanded ? { paddingLeft: '0vw', paddingBottom: '0vw' }:{ paddingLeft: '0vw', paddingTop: '0vw' } }  
       
        
        
@@ -291,6 +292,9 @@ export default function PhotoPage() {
                       filter: 'drop-shadow(0px 10px 15px 0px rgba(0, 0, 0, 0.5))',
                       transform: 'none'
                     }}
+                    onTouchStart={!isExpanded ? onTouchStart : undefined}
+                    onTouchMove={!isExpanded ? onTouchMove : undefined}
+                    onTouchEnd={!isExpanded ? onTouchEnd : undefined}
                   />
                 </TransformComponent>
               </>
@@ -313,10 +317,10 @@ export default function PhotoPage() {
         <div className="font-p22-freely " style={{padding: '', margin: '', lineHeight: 1, fontSize: '5vw'}}>
             {titleText}
           </div>
-          {/* Intro Text Component - with right padding */}
-          <div className="pr-0 max-h-[65vh]" style={{ paddingLeft: '2vw', paddingTop: '8vw' }}>
-            <div className="text-left w-full">
-              <IntroTextPanel paragraphs={paragraphs} />
+          {/* Intro Carousel Component - no padding */}
+          <div className="max-h-[65vh]" style={{ paddingTop: '4vw' }}>
+            <div className="w-full">
+              <IntroCarousel introData={photoData.intro} curtisData={curtisData} />
             </div>
           </div>
 
