@@ -46,6 +46,7 @@ function HomePage() {
         <div className="content">
           <h1 className="title font-p22-freely">Photo<br />Annotations</h1>
           <h2 className="author font-felt-tip">by Curtis Quam</h2>
+          <h2 className="author font-felt-tip">THIS IS AN UPDATE</h2>
           
           <Link to="/photo" className="cta-button font-urw-din">
             Tap to start
