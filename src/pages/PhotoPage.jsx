@@ -56,7 +56,6 @@ export default function PhotoPage() {
   const [mouseEnd, setMouseEnd] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Check if coming back from annotation page
@@ -65,25 +64,6 @@ export default function PhotoPage() {
     const lastPosition = sessionStorage.getItem('lastPhotoPosition');
     
     if (lastPosition) {
-      const photoData = JSON.parse(lastPosition);
-      
-      if (photoData.direction === 'zoom') {
-        // If coming back with zoom animation
-        setIsEntering(true);
-        
-        // Animate in with zoom
-        setTimeout(() => {
-          setIsEntering(false);
-        }, 2500);
-      } else {
-        // Legacy animation
-        setIsEntering(true);
-        
-        setTimeout(() => {
-          setIsEntering(false);
-        }, 100);
-      }
-      
       // Clear the session storage
       sessionStorage.removeItem('lastPhotoPosition');
     }
@@ -102,26 +82,15 @@ export default function PhotoPage() {
     setTouchEnd(e.targetTouches[0].clientX);
   };
 
-  const animateAndNavigate = () => {
-    // Preload the annotation page image
-    const img = new Image();
-    img.src = getAssetPath('assets/images/zuniEagle.jpg');
-    
-    // Apply the page exit animation to the main container
-    setIsAnimating(true);
-    
-    // Store the scroll position and zoom level in sessionStorage
-    // This will help create continuity between pages
+  const navigateToAnnotation = () => {
+    // Just store the expanded state
     sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
       timestamp: Date.now(),
-      direction: 'zoom', // Use zoom transition for all navigation
       isExpanded: isExpanded // Pass the current expanded state to AnnotationPage
     }));
     
-    // Wait for very slow animation to complete before navigating
-    setTimeout(() => {
-      navigate('/annotation');
-    }, 2800); // Slightly shorter to start loading the new page before animation fully completes
+    // Navigate immediately
+    navigate('/annotation');
   };
   
   const onTouchEnd = () => {
@@ -132,9 +101,9 @@ export default function PhotoPage() {
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
     
-    // If swiping left, trigger animation and navigate
-    if (isLeftSwipe && !isAnimating) {
-      animateAndNavigate();
+    // If swiping left, navigate immediately
+    if (isLeftSwipe) {
+      navigateToAnnotation();
     }
   };
   
@@ -161,9 +130,9 @@ export default function PhotoPage() {
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
     
-    // If swiping left, trigger animation and navigate
-    if (isLeftSwipe && !isAnimating) {
-      animateAndNavigate();
+    // If swiping left, navigate immediately
+    if (isLeftSwipe) {
+      navigateToAnnotation();
     }
   };
   
@@ -172,7 +141,7 @@ export default function PhotoPage() {
     setIsDragging(false);
   };
   
-  // Navigate directly to annotation page with simple transition
+  // Navigate directly to annotation page
   const toggleExpandedView = (e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -181,11 +150,10 @@ export default function PhotoPage() {
     // Store the expanded state in sessionStorage
     sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
       timestamp: Date.now(),
-      direction: 'simple',
       isExpanded: true // Always pass true when directly clicking the image
     }));
     
-    // Navigate with minimal delay
+    // Navigate immediately
     navigate('/annotation');
   };
   
@@ -207,12 +175,7 @@ export default function PhotoPage() {
     <main 
         style={{ 
           padding: isExpanded ? '0' : '.5vw', 
-          margin: '0 auto',
-          transition: 'all 3000ms cubic-bezier(0.16, 1, 0.3, 1)',
-          transform: isAnimating ? 'scale(2)' : 
-                    isEntering ? 'scale(0.5)' : 'scale(1)',
-          opacity: isAnimating ? '0.3' : '1',
-          transformOrigin: 'center'
+          margin: '0 auto'
         }} 
         className={`w-screen h-screen relative font-urwdin flex justify-center ${isExpanded ? 'overflow-visible expanded-view' : 'overflow-hidden'}`}
         onClick={handleBackgroundClick}

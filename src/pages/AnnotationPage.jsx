@@ -11,8 +11,7 @@ import photoData from '../data/annotations';
 export default function AnnotationPage({ isPreloaded = false }) {
   const navigate = useNavigate();
   const imageViewerRef = useRef(null);
-  const [isEntering, setIsEntering] = useState(true);
-  const [isExiting, setIsExiting] = useState(false);
+  // Removed transition states
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const [selectedAnnotation, setSelectedAnnotation] = useState(null);
@@ -47,9 +46,7 @@ export default function AnnotationPage({ isPreloaded = false }) {
   
   // Check if coming from photo page
   useEffect(() => {
-    // Skip animation if this is just a preloaded component
     if (isPreloaded) {
-      setIsEntering(false);
       return;
     }
     
@@ -58,46 +55,10 @@ export default function AnnotationPage({ isPreloaded = false }) {
     if (lastPhotoPosition) {
       const photoData = JSON.parse(lastPhotoPosition);
       
-      // Check if we're coming from a simple transition or direct click
-      if (photoData.direction === 'simple') {
-        // Use a simple transition
-        setIsEntering(true); // Set entering state for a brief moment
-        if (photoData.isExpanded) {
-          setIsFullScreen(true);
-        }
-        
-        // Remove entering state after a short delay
-        setTimeout(() => {
-          setIsEntering(false);
-        }, 300);
-      } else if (photoData.direction === 'direct') {
-        // Skip all animation and immediately set fullscreen if needed
-        setIsEntering(false);
-        if (photoData.isExpanded) {
-          setIsFullScreen(true);
-        }
-      } else {
-        // Regular animation behavior for swipe navigation
-        const isFromPhotoPage = (Date.now() - photoData.timestamp < 2000);
-        
-        if (isFromPhotoPage) {
-          if (photoData.isExpanded) {
-            setIsEntering(false);
-            setIsFullScreen(true);
-          } else {
-            const timer = setTimeout(() => {
-              setIsEntering(false);
-            }, 100);
-            
-            return () => clearTimeout(timer);
-          }
-        } else {
-          setIsEntering(false);
-        }
+      // Only check if we need fullscreen mode
+      if (photoData.isExpanded) {
+        setIsFullScreen(true);
       }
-    } else {
-      // If not coming from photo page, don't animate
-      setIsEntering(false);
     }
   }, [isPreloaded]);
 
@@ -112,22 +73,13 @@ export default function AnnotationPage({ isPreloaded = false }) {
   
   // Function to navigate back to photo page
   const navigateBackToPhoto = () => {
-    // Set exiting state for animation
-    setIsExiting(true);
-    
-    // Navigate back after a short delay
-    setTimeout(() => {
-      navigate('/photo');
-    }, 250);
+    // Navigate back immediately
+    navigate('/photo');
   };
 
   const handleClosePanel = () => {
     setIsPanelOpen(false);
-    
-    // Wait for animation to complete before clearing selection
-    setTimeout(() => {
-      setSelectedAnnotation(null);
-    }, 500);
+    setSelectedAnnotation(null);
   };
   
   // Swipe and double tap handlers for going back to photo page
@@ -154,18 +106,14 @@ export default function AnnotationPage({ isPreloaded = false }) {
     const isRightSwipe = distance < -50;
     
     // If swiping right, go back to photo page
-    if (isRightSwipe && !isExiting) {
-      setIsExiting(true);
-      
-      // Store data to indicate we're coming back to photo with zoom animation
+    if (isRightSwipe) {
+      // Store timestamp for returning to photo page
       sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
-        timestamp: Date.now(),
-        direction: 'zoom' // Use zoom animation
+        timestamp: Date.now()
       }));
       
-      setTimeout(() => {
-        navigate('/photo');
-      }, 2800);
+      // Navigate immediately
+      navigate('/photo');
     }
   };
   
@@ -178,19 +126,14 @@ export default function AnnotationPage({ isPreloaded = false }) {
   // Function to handle double tap/click
   const handleDoubleTap = () => {
     if (isPanelOpen) return;
-    if (isExiting) return;
     
-    setIsExiting(true);
-    
-    // Store data to indicate we're coming back to photo page
+    // Store timestamp for returning to photo page
     sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
-      timestamp: Date.now(),
-      direction: 'simple' // Use simple animation for double tap
+      timestamp: Date.now()
     }));
     
-    setTimeout(() => {
-      navigate('/photo');
-    }, 300);
+    // Navigate immediately
+    navigate('/photo');
   };
   
   // Check for double tap when screen is touched
@@ -242,18 +185,14 @@ export default function AnnotationPage({ isPreloaded = false }) {
     const isRightSwipe = distance < -50;
     
     // If swiping right, go back to photo page
-    if (isRightSwipe && !isExiting) {
-      setIsExiting(true);
-      
-      // Store data to indicate we're coming back to photo with zoom animation
+    if (isRightSwipe) {
+      // Store timestamp for returning to photo page
       sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
-        timestamp: Date.now(),
-        direction: 'zoom' // Use zoom animation
+        timestamp: Date.now()
       }));
       
-      setTimeout(() => {
-        navigate('/photo');
-      }, 2800);
+      // Navigate immediately
+      navigate('/photo');
     }
   };
   
@@ -307,7 +246,7 @@ export default function AnnotationPage({ isPreloaded = false }) {
 
   // Detect double tap on main container
   const onContainerDoubleClick = () => {
-    if (!isPanelOpen && !isExiting) {
+    if (!isPanelOpen) {
       handleDoubleTap();
     }
   };
@@ -324,11 +263,6 @@ export default function AnnotationPage({ isPreloaded = false }) {
       <div 
         className="w-screen h-screen flex items-center justify-center m-0 p-0 relative"
         style={{
-          transition: isFullScreen ? 'none' : 'all 300ms ease-out',
-          transform: isEntering ? 'scale(0.95)' : 
-                    isExiting ? 'scale(0.95)' : 'scale(1)',
-          opacity: isEntering ? '0.85' : '1',
-          transformOrigin: 'center',
           pointerEvents: 'none', /* Make the container pass-through */
           overflow: 'visible'
         }}
@@ -364,23 +298,20 @@ export default function AnnotationPage({ isPreloaded = false }) {
         
       {/* Overlay for panel background when open */}
       <div 
-        className={`${isPanelOpen ? 'opacity-100 visible' : 'opacity-0 invisible'} fixed inset-0 bg-black bg-opacity-10 z-[900]`}
+        className={`${isPanelOpen ? 'opacity-100 visible' : 'hidden'} fixed inset-0 bg-black bg-opacity-10 z-[900]`}
         style={{ 
-          transition: 'opacity 400ms ease-out',
           pointerEvents: isPanelOpen ? 'auto' : 'none'
         }}
         onClick={handleClosePanel}
       />
       
       {/* Right side - Annotation Panel - positioned bottom right when panel is open */}
-      <div className={`${isPanelOpen ? 'opacity-100 visible' : 'opacity-0 invisible'} fixed z-[1000]`} 
+      <div className={`${isPanelOpen ? 'block' : 'hidden'} fixed z-[1000]`} 
            style={{ 
-             transition: 'opacity 400ms ease-out, transform 400ms ease-out',
              top: 'auto', /* Override previous top positioning */
              left: 'auto', /* Override previous left positioning */
              right: '80px', /* Position from right side - equal to bottom distance */
              bottom: '80px', /* Position from bottom with space for home button */
-             transform: 'none', /* Remove previous transform */
              maxHeight: 'calc(90vh - 100px)', /* Add height limit with space at top and bottom */
              pointerEvents: 'auto'
            }}>

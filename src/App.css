@@ -6,6 +6,7 @@
   text-align: center;
 }
 
+
 /* Panel animation styles */
 @keyframes slideInFromRight {
   0% { transform: translateX(100%); }
