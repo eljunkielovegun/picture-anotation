@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAssetPath } from '../utils/assetUtils';
 import ImageViewer from '../components/ImageViewer';
@@ -10,6 +10,7 @@ import photoData from '../data/annotations';
 
 export default function AnnotationPage({ isPreloaded = false }) {
   const navigate = useNavigate();
+  const imageViewerRef = useRef(null);
   const [isEntering, setIsEntering] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
@@ -17,22 +18,32 @@ export default function AnnotationPage({ isPreloaded = false }) {
   const [selectedAnnotation, setSelectedAnnotation] = useState(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [markerType, setMarkerType] = useState('default');
+  const [isFullScreen, setIsFullScreen] = useState(false); // Track if we're in full screen mode
   
-  // Listen for custom event to close the panel
+  // Listen for custom events
   useEffect(() => {
+    // Handler for closing panel
     const handleCloseFromImage = () => {
-      console.log("closeAnnotationPanel event received in AnnotationPage");
       handleClosePanel();
     };
     
-    document.body.addEventListener('closeAnnotationPanel', handleCloseFromImage);
-    console.log("Added event listener for closeAnnotationPanel");
+    // Handler for double click/tap on image
+    const handleDoubleClick = () => {
+      if (!isPanelOpen) {
+        handleDoubleTap();
+      }
+    };
     
+    // Add event listeners
+    document.body.addEventListener('closeAnnotationPanel', handleCloseFromImage);
+    document.body.addEventListener('doubleClickOnImage', handleDoubleClick);
+    
+    // Cleanup on unmount
     return () => {
       document.body.removeEventListener('closeAnnotationPanel', handleCloseFromImage);
-      console.log("Removed event listener for closeAnnotationPanel");
+      document.body.removeEventListener('doubleClickOnImage', handleDoubleClick);
     };
-  }, []);
+  }, [isPanelOpen]); // Re-add listeners if panel state changes
   
   // Check if coming from photo page
   useEffect(() => {
@@ -43,16 +54,47 @@ export default function AnnotationPage({ isPreloaded = false }) {
     }
     
     const lastPhotoPosition = sessionStorage.getItem('lastPhotoPosition');
-    const isFromPhotoPage = lastPhotoPosition && 
-      (Date.now() - JSON.parse(lastPhotoPosition).timestamp < 2000);
+    
+    if (lastPhotoPosition) {
+      const photoData = JSON.parse(lastPhotoPosition);
       
-    // Only animate if coming from photo page
-    if (isFromPhotoPage) {
-      const timer = setTimeout(() => {
+      // Check if we're coming from a simple transition or direct click
+      if (photoData.direction === 'simple') {
+        // Use a simple transition
+        setIsEntering(true); // Set entering state for a brief moment
+        if (photoData.isExpanded) {
+          setIsFullScreen(true);
+        }
+        
+        // Remove entering state after a short delay
+        setTimeout(() => {
+          setIsEntering(false);
+        }, 300);
+      } else if (photoData.direction === 'direct') {
+        // Skip all animation and immediately set fullscreen if needed
         setIsEntering(false);
-      }, 100);
-      
-      return () => clearTimeout(timer);
+        if (photoData.isExpanded) {
+          setIsFullScreen(true);
+        }
+      } else {
+        // Regular animation behavior for swipe navigation
+        const isFromPhotoPage = (Date.now() - photoData.timestamp < 2000);
+        
+        if (isFromPhotoPage) {
+          if (photoData.isExpanded) {
+            setIsEntering(false);
+            setIsFullScreen(true);
+          } else {
+            const timer = setTimeout(() => {
+              setIsEntering(false);
+            }, 100);
+            
+            return () => clearTimeout(timer);
+          }
+        } else {
+          setIsEntering(false);
+        }
+      }
     } else {
       // If not coming from photo page, don't animate
       setIsEntering(false);
@@ -61,21 +103,25 @@ export default function AnnotationPage({ isPreloaded = false }) {
 
   // Handle annotation selection and panel open/close
   const handleSelectAnnotation = (annotation) => {
-    console.log("AnnotationPage: Selecting annotation", annotation);
-    
     // Load content first but don't animate yet
     setSelectedAnnotation(annotation);
     
-    // Important: Ensure content is fully rendered before any animation
-    // Force a synchronous render cycle to complete first
+    // Immediately open the panel
+    setIsPanelOpen(true);
+  };
+  
+  // Function to navigate back to photo page
+  const navigateBackToPhoto = () => {
+    // Set exiting state for animation
+    setIsExiting(true);
+    
+    // Navigate back after a short delay
     setTimeout(() => {
-      // Now that content has had time to render, start animation
-      setIsPanelOpen(true);
-    }, 100);
+      navigate('/photo');
+    }, 250);
   };
 
   const handleClosePanel = () => {
-    console.log("AnnotationPage: Closing panel");
     setIsPanelOpen(false);
     
     // Wait for animation to complete before clearing selection
@@ -84,22 +130,14 @@ export default function AnnotationPage({ isPreloaded = false }) {
     }, 500);
   };
   
-  // Swipe handlers for going back to photo page
+  // Swipe and double tap handlers for going back to photo page
   const onTouchStart = (e) => {
-    console.log("Touch start on AnnotationPage container", e.target);
-    
-    // If panel is open, this could be a tap to close
-    if (isPanelOpen) {
-      // Check if touched on background (directly on this element)
-      if (e.target === e.currentTarget) {
-        console.log("Background touched, closing panel");
-        handleClosePanel();
-        return;
-      }
-    }
-    
+    // Track touch for swipe detection
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
+    
+    // Check for double tap
+    checkForDoubleTap(e);
   };
   
   const onTouchMove = (e) => {
@@ -119,40 +157,71 @@ export default function AnnotationPage({ isPreloaded = false }) {
     if (isRightSwipe && !isExiting) {
       setIsExiting(true);
       
-      // Store data to indicate we're coming back to photo
+      // Store data to indicate we're coming back to photo with zoom animation
       sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
         timestamp: Date.now(),
-        direction: 'right-to-left'
+        direction: 'zoom' // Use zoom animation
       }));
       
       setTimeout(() => {
         navigate('/photo');
-      }, 500);
+      }, 2800);
     }
   };
   
-  // Add mouse support for desktop testing
+  // Add mouse support for desktop testing and double tap detection
   const [mouseStart, setMouseStart] = useState(null);
   const [mouseEnd, setMouseEnd] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [lastTap, setLastTap] = useState(0); // Track last tap time for double tap detection
+  
+  // Function to handle double tap/click
+  const handleDoubleTap = () => {
+    if (isPanelOpen) return;
+    if (isExiting) return;
+    
+    setIsExiting(true);
+    
+    // Store data to indicate we're coming back to photo page
+    sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
+      timestamp: Date.now(),
+      direction: 'simple' // Use simple animation for double tap
+    }));
+    
+    setTimeout(() => {
+      navigate('/photo');
+    }, 300);
+  };
+  
+  // Check for double tap when screen is touched
+  const checkForDoubleTap = (e) => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300; // Time window for double tap in ms
+    
+    if (now - lastTap < DOUBLE_TAP_DELAY) {
+      // This is a double tap
+      e.preventDefault();
+      handleDoubleTap();
+    } else {
+      // This is the first tap, store the timestamp
+      setLastTap(now);
+    }
+  };
   
   const onMouseDown = (e) => {
-    // Log mouse down events regardless of panel state
-    console.log("Mouse down on AnnotationPage container");
-    
-    // If panel is open, this could be a click to close
-    if (isPanelOpen) {
-      // Check if clicked on background (directly on this element)
-      if (e.target === e.currentTarget) {
-        console.log("Background clicked, closing panel");
-        handleClosePanel();
-        return;
-      }
-    }
-    
+    // Handle swipe gesture tracking
     setMouseEnd(null);
     setMouseStart(e.clientX);
     setIsDragging(true);
+    
+    // Check for double click on desktop
+    const now = Date.now();
+    const DOUBLE_CLICK_DELAY = 300;
+    if (now - lastTap < DOUBLE_CLICK_DELAY) {
+      // This is a double click
+      handleDoubleTap();
+    }
+    setLastTap(now);
   };
   
   const onMouseMove = (e) => {
@@ -176,15 +245,15 @@ export default function AnnotationPage({ isPreloaded = false }) {
     if (isRightSwipe && !isExiting) {
       setIsExiting(true);
       
-      // Store data to indicate we're coming back to photo
+      // Store data to indicate we're coming back to photo with zoom animation
       sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
         timestamp: Date.now(),
-        direction: 'right-to-left'
+        direction: 'zoom' // Use zoom animation
       }));
       
       setTimeout(() => {
         navigate('/photo');
-      }, 500);
+      }, 2800);
     }
   };
   
@@ -194,131 +263,151 @@ export default function AnnotationPage({ isPreloaded = false }) {
   
   // Handler for marker type change
   const handleMarkerChange = (newMarkerType) => {
-    console.log("Marker type changed to:", newMarkerType);
     setMarkerType(newMarkerType);
   };
   
-  // Don't add event handlers if this is a preloaded instance
-  const eventHandlers = isPreloaded ? {} : {
-    onTouchStart,
-    onTouchMove,
-    onTouchEnd,
-    onMouseDown,
-    onMouseMove,
-    onMouseUp,
-    onMouseLeave
+  // Handler for clicks that occur outside the ImageViewer component
+  const handleBackgroundClick = (e) => {
+    console.log("Background click detected", {
+      target: e.target,
+      currentTarget: e.currentTarget,
+      hasImageViewerRef: !!imageViewerRef.current
+    });
+    
+    // If we have a reference to the image viewer container
+    if (imageViewerRef.current) {
+      // Check if the click target is not within the image viewer
+      const isOutside = !imageViewerRef.current.contains(e.target);
+      console.log("Is click outside image viewer?", isOutside);
+      
+      if (isOutside) {
+        // If panel is open, close it first
+        if (isPanelOpen) {
+          console.log("Panel is open, closing it first");
+          // Create a custom event to reset zoom in the ImageViewer
+          const resetZoomEvent = new CustomEvent('resetImageZoom');
+          document.body.dispatchEvent(resetZoomEvent);
+          
+          // Close the panel
+          handleClosePanel();
+          
+          // Don't navigate immediately to allow panel animation to complete
+          return;
+        }
+        
+        // Otherwise navigate back to photo page
+        console.log("Navigating back to photo page");
+        navigateBackToPhoto();
+      }
+    }
+  };
+  
+  // We no longer need these event handlers for our new approach
+
+
+  // Detect double tap on main container
+  const onContainerDoubleClick = () => {
+    if (!isPanelOpen && !isExiting) {
+      handleDoubleTap();
+    }
   };
 
-
   return (
-    <div 
-      className="w-screen h-screen flex flex-col items-center justify-center overflow-hidden m-0 p-0 relative"
-      style={{
-        backgroundColor: '#BFB6A3', /* Same as PhotoPage */
-        transition: 'transform 700ms cubic-bezier(0.25, 0.1, 0.25, 1.0)',
-        transform: isEntering ? 'translateX(40%)' : 
-                  isExiting ? 'translateX(40%)' : 'translateX(0)'
-      }}
-      onMouseDown={(e) => {
-        console.log("Direct mousedown on outer container");
-        if (isPanelOpen && e.target === e.currentTarget) {
-          console.log("Background directly clicked, closing panel");
-          
-          // Create a custom event to reset zoom in the ImageViewer
-          const resetZoomEvent = new CustomEvent('resetImageZoom');
-          document.body.dispatchEvent(resetZoomEvent);
-          
-          // Close the panel
-          handleClosePanel();
-        }
-        if (eventHandlers.onMouseDown) eventHandlers.onMouseDown(e);
-      }}
-      onTouchStart={(e) => {
-        console.log("Direct touchstart on outer container");
-        if (isPanelOpen && e.target === e.currentTarget) {
-          console.log("Background directly touched, closing panel");
-          
-          // Create a custom event to reset zoom in the ImageViewer
-          const resetZoomEvent = new CustomEvent('resetImageZoom');
-          document.body.dispatchEvent(resetZoomEvent);
-          
-          // Close the panel
-          handleClosePanel();
-        }
-        if (eventHandlers.onTouchStart) eventHandlers.onTouchStart(e);
-      }}
-      {...eventHandlers}
-    >
+    <>
+      {/* Background overlay div that works as a back button */}
+      <div 
+        className="fixed inset-0 bg-[#BFB6A3] z-[5] cursor-pointer"
+        onClick={navigateBackToPhoto}
+      />
+
+      {/* Main content container */}
+      <div 
+        className="w-screen h-screen flex items-center justify-center m-0 p-0 relative"
+        style={{
+          transition: isFullScreen ? 'none' : 'all 300ms ease-out',
+          transform: isEntering ? 'scale(0.95)' : 
+                    isExiting ? 'scale(0.95)' : 'scale(1)',
+          opacity: isEntering ? '0.85' : '1',
+          transformOrigin: 'center',
+          pointerEvents: 'none', /* Make the container pass-through */
+          overflow: 'visible'
+        }}
+        onDoubleClick={onContainerDoubleClick}
+      >
       
-      {/* Use flex layout for content */}
-      <div className="w-full h-full flex items-center justify-center overflow-visible">
-        {/* Left side - Image container */}
-        <div 
-          className={`${isPanelOpen ? 'w-[65%]' : 'w-full'} h-screen flex items-center justify-center transition-all duration-500 overflow-hidden`}
-          style={{
-            transition: 'width 0.5s ease-out',
-            padding: '0',
-            margin: '0'
-          }}
-        >
+      {/* Image container with higher z-index */}
+      <div 
+        className="relative z-[10] w-full h-full flex items-center justify-center"
+        style={{
+          padding: '0',
+          margin: '0',
+          pointerEvents: 'auto', /* Override the pass-through from parent */
+          overflow: 'visible',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0
+        }}
+        ref={imageViewerRef}
+        onDoubleClick={onContainerDoubleClick}
+      >
           <ImageViewer 
             image={getAssetPath('assets/images/zuniEagle.jpg')} 
             fullViewport={true} 
             onSelectAnnotation={handleSelectAnnotation}
             isPanelOpen={isPanelOpen}
             markerType={markerType}
+            initialFullScreen={isFullScreen} // Pass the fullscreen flag from PhotoPage
           />
         </div>
         
-        {/* Right side - Annotation Panel */}
-        <div className={`${isPanelOpen ? 'w-[30%] opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-full'} h-screen flex items-center overflow-visible pr-[5vw]`} 
-             style={{ 
-               transition: 'width 400ms ease-out, opacity 400ms ease-out, translate 400ms ease-out'
-             }}
-             onMouseDown={(e) => {
-               // Only trigger if click is directly on this container (not its children)
-               if (e.target === e.currentTarget) {
-                 console.log("Mouse down on annotation container");
-                 
-                 // Create a custom event to reset zoom
-                 const resetZoomEvent = new CustomEvent('resetImageZoom');
-                 document.body.dispatchEvent(resetZoomEvent);
-                 
-                 // Close the panel
-                 handleClosePanel();
-                 
-                 // Stop event propagation
-                 e.stopPropagation();
-               }
-             }}>
-          {/* Render the panel in a fixed-width container to prevent content reflow */}
-          {selectedAnnotation && (
-            <div className="w-full max-w-[25vw]">
-              <AnnotationPanel 
-                annotation={selectedAnnotation} 
-                onClose={handleClosePanel} 
-              />
-            </div>
-          )}
-
-           {/* Home button */}
-     
-
-        </div>
-         
-
-          
-          
-          
+      {/* Overlay for panel background when open */}
+      <div 
+        className={`${isPanelOpen ? 'opacity-100 visible' : 'opacity-0 invisible'} fixed inset-0 bg-black bg-opacity-10 z-[900]`}
+        style={{ 
+          transition: 'opacity 400ms ease-out',
+          pointerEvents: isPanelOpen ? 'auto' : 'none'
+        }}
+        onClick={handleClosePanel}
+      />
+      
+      {/* Right side - Annotation Panel - positioned bottom right when panel is open */}
+      <div className={`${isPanelOpen ? 'opacity-100 visible' : 'opacity-0 invisible'} fixed z-[1000]`} 
+           style={{ 
+             transition: 'opacity 400ms ease-out, transform 400ms ease-out',
+             top: 'auto', /* Override previous top positioning */
+             left: 'auto', /* Override previous left positioning */
+             right: '80px', /* Position from right side - equal to bottom distance */
+             bottom: '80px', /* Position from bottom with space for home button */
+             transform: 'none', /* Remove previous transform */
+             maxHeight: 'calc(90vh - 100px)', /* Add height limit with space at top and bottom */
+             pointerEvents: 'auto'
+           }}>
+        {/* Render the panel in a fixed-size container */}
+        {selectedAnnotation && (
+          <div className="w-[380px] rounded-2xl overflow-hidden" 
+               style={{ 
+                 boxShadow: '0 15px 40px rgba(206, 149, 121, 0.5), 0 10px 20px rgba(206, 149, 121, 0.5), -10px 0 30px rgba(206, 149, 121, 0.5), 10px 0 30px rgba(206, 149, 121, 0.5)',
+                 backgroundColor: '#F5F7DC',
+                 height: 'auto',
+                 maxHeight: 'calc(90vh - 100px)', /* Max height with space for buttons */
+                 borderRadius: '20px',
+                 overflowY: 'auto' /* Allow scrolling for long content */
+               }}>
+            <AnnotationPanel 
+              annotation={selectedAnnotation} 
+              onClose={handleClosePanel} 
+            />
+          </div>
+        )}
       </div>
       
-      {/* Add MarkerSelector component */}
-      <div className="absolute left-[2vw]  z-50" onClick={(e) => e.stopPropagation()}>
-        <MarkerSelector onSelect={handleMarkerChange} currentMarker={markerType} />
+      {/* Using NewHomeButton with pointer-events enabled */}
+      <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1001, pointerEvents: 'auto' }}>
+        <NewHomeButton key="annotationPageHomeButton" />
       </div>
-      
-      {/* Using NewHomeButton instead */}
-      <NewHomeButton key="annotationPageHomeButton" />
-    </div>
+      </div>
+    </>
   );
 }

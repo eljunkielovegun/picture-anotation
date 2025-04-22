@@ -322,6 +322,7 @@
   }
 }
 
+
 .title, .author, .cta-button {
   animation: fadeIn 1.5s ease-out forwards;
 }

@@ -5,6 +5,10 @@ import { getAssetPath } from '../utils/assetUtils';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import NewHomeButton from '../components/NewHomeButton';
 
+// Preload the annotation page image on component mount
+const preloadImage = new Image();
+preloadImage.src = getAssetPath('assets/images/zuniEagle.jpg');
+
 
 // Intro Text Component
 const IntroTextPanel = ({ paragraphs }) => {
@@ -53,20 +57,32 @@ export default function PhotoPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   // Check if coming back from annotation page
   useEffect(() => {
     // Detect if we're coming from annotation page (could be a back navigation)
-    const fromAnnotation = sessionStorage.getItem('lastPhotoPosition') !== null;
+    const lastPosition = sessionStorage.getItem('lastPhotoPosition');
     
-    if (fromAnnotation) {
-      // Start with the page offscreen to the right
-      setIsEntering(true);
+    if (lastPosition) {
+      const photoData = JSON.parse(lastPosition);
       
-      // Then animate it in - with a longer delay to ensure smoother transition
-      setTimeout(() => {
-        setIsEntering(false);
-      }, 100);
+      if (photoData.direction === 'zoom') {
+        // If coming back with zoom animation
+        setIsEntering(true);
+        
+        // Animate in with zoom
+        setTimeout(() => {
+          setIsEntering(false);
+        }, 2500);
+      } else {
+        // Legacy animation
+        setIsEntering(true);
+        
+        setTimeout(() => {
+          setIsEntering(false);
+        }, 100);
+      }
       
       // Clear the session storage
       sessionStorage.removeItem('lastPhotoPosition');
@@ -87,6 +103,10 @@ export default function PhotoPage() {
   };
 
   const animateAndNavigate = () => {
+    // Preload the annotation page image
+    const img = new Image();
+    img.src = getAssetPath('assets/images/zuniEagle.jpg');
+    
     // Apply the page exit animation to the main container
     setIsAnimating(true);
     
@@ -94,17 +114,19 @@ export default function PhotoPage() {
     // This will help create continuity between pages
     sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
       timestamp: Date.now(),
-      direction: 'left-to-right'
+      direction: 'zoom', // Use zoom transition for all navigation
+      isExpanded: isExpanded // Pass the current expanded state to AnnotationPage
     }));
     
-    // Wait for animation to complete before navigating
+    // Wait for very slow animation to complete before navigating
     setTimeout(() => {
       navigate('/annotation');
-    }, 500); // Timing that allows for overlap with longer animation
+    }, 2800); // Slightly shorter to start loading the new page before animation fully completes
   };
   
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
+    if (isExpanded) return; // Don't process swipes when in expanded mode
     
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
@@ -133,6 +155,7 @@ export default function PhotoPage() {
     setIsDragging(false);
     
     if (!mouseStart || !mouseEnd) return;
+    if (isExpanded) return; // Don't process swipes when in expanded mode
     
     const distance = mouseStart - mouseEnd;
     const isLeftSwipe = distance > minSwipeDistance;
@@ -148,51 +171,126 @@ export default function PhotoPage() {
   const onMouseLeave = () => {
     setIsDragging(false);
   };
+  
+  // Navigate directly to annotation page with simple transition
+  const toggleExpandedView = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    console.log('Image clicked/tapped - navigating to annotation page');
+    
+    // Store the expanded state in sessionStorage
+    sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
+      timestamp: Date.now(),
+      direction: 'simple',
+      isExpanded: true // Always pass true when directly clicking the image
+    }));
+    
+    // Navigate with minimal delay
+    navigate('/annotation');
+  };
+  
+  // Close expanded view when clicking outside the image
+  const handleBackgroundClick = (e) => {
+    if (isExpanded) {
+      console.log('Background clicked - closing expanded view');
+      
+      if (transformRef.current) {
+        transformRef.current.resetTransform();
+      }
+      
+      setIsExpanded(false);
+      e.stopPropagation();
+    }
+  };
 
   return (
     <main 
         style={{ 
-          padding: '2vw', 
+          padding: isExpanded ? '0' : '.5vw', 
           margin: '0 auto',
-          transition: 'transform 700ms cubic-bezier(0.25, 0.1, 0.25, 1.0)',
-          transform: isAnimating ? 'translateX(-40%)' : 
-                    isEntering ? 'translateX(-40%)' : 'translateX(0)'
+          transition: 'all 3000ms cubic-bezier(0.16, 1, 0.3, 1)',
+          transform: isAnimating ? 'scale(2)' : 
+                    isEntering ? 'scale(0.5)' : 'scale(1)',
+          opacity: isAnimating ? '0.3' : '1',
+          transformOrigin: 'center'
         }} 
-        className="w-screen h-screen relative font-urwdin flex overflow-hidden justify-center"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseLeave}>
+        className={`w-screen h-screen relative font-urwdin flex justify-center ${isExpanded ? 'overflow-visible expanded-view' : 'overflow-hidden'}`}
+        onClick={handleBackgroundClick}
+        onTouchStart={!isExpanded ? onTouchStart : undefined}
+        onTouchMove={!isExpanded ? onTouchMove : undefined}
+        onTouchEnd={!isExpanded ? onTouchEnd : undefined}
+        onMouseDown={!isExpanded ? onMouseDown : undefined}
+        onMouseMove={!isExpanded ? onMouseMove : undefined}
+        onMouseUp={!isExpanded ? onMouseUp : undefined}
+        onMouseLeave={!isExpanded ? onMouseLeave : undefined}
+        >
       {/* LEFT COLUMN - Photo section (60% width with padding) */}
-       <div className="h-screen flex flex-col relative">
+       <div className={isExpanded ?  'h-screen flex flex-col relative overflow-visible w-1/4 items-start translate-y-[-3.5vw]'   :'h-screen flex flex-col relative overflow-visible' 
+       
+       }
+       style={isExpanded ? { paddingLeft: '0vw', paddingBottom: '0vw' }:{ paddingLeft: '0vw', paddingTop: '0vw' } }  
+      
+       
+       
+       >
         {/* Title above the photo - responsive size */}
       
         
         {/* Photo container with drop shadow - positioned to the right */}
-        <div className="flex-grow flex items-start justify-end relative z-50 ">
+        <div 
+            className={isExpanded 
+              ? 'fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 transition-opacity duration-[0ms] ease-in-out'
+              : 'flex-grow flex items-start relative z-50 cursor-pointer'
+            }
+            style={isExpanded ? { padding: '0', margin: '0' } : { padding: '0vw'}}
+            onClick={!isExpanded ? toggleExpandedView : undefined}>
           <TransformWrapper
             initialScale={1}
             minScale={0.5}
-            maxScale={3}
+            maxScale={5}
             wheel={{ wheelEnabled: true }}
             pinch={{ pinchEnabled: true }}
+            panning={{ 
+              disabled: isExpanded,  // Disable panning when expanded
+              animationTime: 100
+            }}
             doubleClick={{ 
               mode: "reset",
-              animationTime: 200
+              animationTime: 100
+            }}
+            limitToBounds={false}  // Allow image to move beyond bounds for better centering
+            centerOnInit={true}
+            velocityAnimation={{ 
+              sensitivity: 1,
+              animationTime: 500
             }}
             ref={transformRef}
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
               <>
-                <TransformComponent wrapperStyle={{ zIndex: 50 }}>
+                {/* No text on expanded image */}
+                <TransformComponent 
+                  wrapperStyle={{ 
+                    zIndex: 50,
+                    display: 'flex',
+                   overflow: 'visible',
+                    alignItems: 'left',
+                    width: '100%',
+                    height: '100%',
+                    position: isExpanded ? 'relative' : undefined ,
+                    left: isExpanded ? '0' : undefined
+                  }}>
                   <img
                     src={getAssetPath('assets/images/zuniEagle.jpg')}
                     alt="A Zuni Eagle Cage"
-                    className="max-h-full max-w-full object-contain relative z-10"
-                    style={{ filter: 'drop-shadow(0px 10px 15px rgba(0, 0, 0, 0.5))' }}
+                    className={isExpanded 
+                      ? "max-h-[100vh] max-w-[100vw] object-contain relative z-10 cursor-move" 
+                      : "max-h-full max-w-full object-contain relative z-10 cursor-pointer"
+                    }
+                    style={{ 
+                      filter: 'drop-shadow(0px 10px 15px 0px rgba(0, 0, 0, 0.5))',
+                      transform: 'none'
+                    }}
                   />
                 </TransformComponent>
               </>
@@ -201,13 +299,17 @@ export default function PhotoPage() {
         </div>
         
         {/* Bottom Instruction - positioned closer to the photo */}
-        <div className="mt-0 mb-0 w-full text-xs italic text-gallery-deepPurple text-right z-50">
-          Tap on picture to explore. Scroll or pinch to zoom. Double-tap to reset. Swipe left for annotations.
-        </div>
+        {!isExpanded && (
+          <div className="text-lg italic text-center z-50 py-4 font-bold absolute bottom-0 left-0 transform translate-x-[50vw] translate-y-[58vw]" style={{ paddingBottom: '5vw', paddingLeft: '5vw', paddingRight: '5vw', color: '#5F3833' }}>
+            Tap to explore 
+          </div>
+        )}
       </div>
 
       {/* RIGHT PANEL: intro + credit (30% width) with padding from photo */}
-      <div className="py-0 flex flex-col justify-start items-start relative z-40  overflow-auto w-1/2"style={{ paddingRight: '5vw', paddingTop: '1vw' }} >
+      <div className={`py-0 flex flex-col justify-start items-start relative z-40 overflow-auto w-1/2 transition-opacity duration-[0ms] ${
+        isExpanded ? 'opacity-0' : 'opacity-100'
+      }`} style={{ paddingRight: '5vw', paddingTop: '1vw' }} >
         <div className="font-p22-freely " style={{padding: '', margin: '', lineHeight: 1, fontSize: '5vw'}}>
             {titleText}
           </div>
@@ -222,13 +324,13 @@ export default function PhotoPage() {
           <div className="relative overflow-visible mt-0 w-screen ml-[-40vw]">
             <div className="relative w-full">
               {/* The content container positioned where the text should remain */}
-              <div className="absolute text-left" style={{ left: '40vw', paddingTop: '6vw', margin: '' }}>
+              <div className="absolute text-left" style={{ left: '40vw', paddingTop: '5vw', margin: '' }}>
                 <PhotoCreditsPanel  credit={credit} />
               </div>
             </div>
           </div>
-                {/* Using NewHomeButton instead */}
-                <NewHomeButton key="photoPageHomeButton" />
+          {/* Using NewHomeButton instead */}
+          <NewHomeButton key="photoPageHomeButton" />
       </div>
       
      
