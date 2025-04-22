@@ -50,20 +50,25 @@ export default function PhotoPage() {
   const { titleText, credit } = photoData.photo;
   const { paragraphs } = photoData.intro;
   const transformRef = React.useRef(null);
+  const photoImageRef = React.useRef(null);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const [mouseStart, setMouseStart] = useState(null);
   const [mouseEnd, setMouseEnd] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isEntering, setIsEntering] = useState(false);
+  // Removed transition state
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Check if coming back from annotation page
   useEffect(() => {
-    // Detect if we're coming from annotation page (could be a back navigation)
+    // Detect if we're coming from annotation page with expanded state
     const lastPosition = sessionStorage.getItem('lastPhotoPosition');
     
     if (lastPosition) {
+      const data = JSON.parse(lastPosition);
+      if (data.isExpanded) {
+        setIsExpanded(true);
+      }
       // Clear the session storage
       sessionStorage.removeItem('lastPhotoPosition');
     }
@@ -83,13 +88,27 @@ export default function PhotoPage() {
   };
 
   const navigateToAnnotation = () => {
-    // Just store the expanded state
+    // Find the image position for the transition using the ref
+    if (photoImageRef.current) {
+      const rect = photoImageRef.current.getBoundingClientRect();
+      // Use the center of the image
+      const centerX = ((rect.left + rect.width / 2) / window.innerWidth) * 100;
+      const centerY = ((rect.top + rect.height / 2) / window.innerHeight) * 100;
+      
+      // Store position for expand animation
+      sessionStorage.setItem('transition_position', JSON.stringify({
+        x: centerX,
+        y: centerY
+      }));
+    }
+    
+    // Store the expanded state
     sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
       timestamp: Date.now(),
       isExpanded: isExpanded // Pass the current expanded state to AnnotationPage
     }));
     
-    // Navigate immediately
+    // Navigate to trigger the transition
     navigate('/annotation');
   };
   
@@ -141,11 +160,28 @@ export default function PhotoPage() {
     setIsDragging(false);
   };
   
-  // Navigate directly to annotation page
+  // Navigate directly to annotation page with expand animation
   const toggleExpandedView = (e) => {
     e.stopPropagation();
     e.preventDefault();
     console.log('Image clicked/tapped - navigating to annotation page');
+    
+    // Calculate the click position for the expand animation
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX;
+    const clickY = e.clientY;
+    
+    // Convert to percentage coordinates relative to the viewport
+    const percentX = (clickX / window.innerWidth) * 100;
+    const percentY = (clickY / window.innerHeight) * 100;
+    
+    console.log(`Click position: ${percentX}%, ${percentY}%`);
+    
+    // Store position for expand animation
+    sessionStorage.setItem('transition_position', JSON.stringify({
+      x: percentX,
+      y: percentY
+    }));
     
     // Store the expanded state in sessionStorage
     sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
@@ -153,7 +189,7 @@ export default function PhotoPage() {
       isExpanded: true // Always pass true when directly clicking the image
     }));
     
-    // Navigate immediately
+    // Navigate to trigger the transition
     navigate('/annotation');
   };
   
@@ -244,6 +280,7 @@ export default function PhotoPage() {
                     left: isExpanded ? '0' : undefined
                   }}>
                   <img
+                    ref={photoImageRef}
                     src={getAssetPath('assets/images/zuniEagle.jpg')}
                     alt="A Zuni Eagle Cage"
                     className={isExpanded 

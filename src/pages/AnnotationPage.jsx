@@ -59,6 +59,9 @@ export default function AnnotationPage({ isPreloaded = false }) {
       if (photoData.isExpanded) {
         setIsFullScreen(true);
       }
+      
+      // Clear storage
+      sessionStorage.removeItem('lastPhotoPosition');
     }
   }, [isPreloaded]);
 
@@ -73,7 +76,22 @@ export default function AnnotationPage({ isPreloaded = false }) {
   
   // Function to navigate back to photo page
   const navigateBackToPhoto = () => {
-    // Navigate back immediately
+    // Always use center position for fade out effect
+    const centerX = 50;
+    const centerY = 50;
+    
+    // Store position for shrink animation
+    sessionStorage.setItem('transition_position', JSON.stringify({
+      x: centerX,
+      y: centerY
+    }));
+    
+    // Store data for returning to photo page
+    sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
+      timestamp: Date.now()
+    }));
+    
+    // Navigate back to trigger the transition
     navigate('/photo');
   };
 
@@ -107,13 +125,8 @@ export default function AnnotationPage({ isPreloaded = false }) {
     
     // If swiping right, go back to photo page
     if (isRightSwipe) {
-      // Store timestamp for returning to photo page
-      sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
-        timestamp: Date.now()
-      }));
-      
-      // Navigate immediately
-      navigate('/photo');
+      // Use the navigation function to maintain consistency
+      navigateBackToPhoto();
     }
   };
   
@@ -127,13 +140,8 @@ export default function AnnotationPage({ isPreloaded = false }) {
   const handleDoubleTap = () => {
     if (isPanelOpen) return;
     
-    // Store timestamp for returning to photo page
-    sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
-      timestamp: Date.now()
-    }));
-    
-    // Navigate immediately
-    navigate('/photo');
+    // Use the navigation function to maintain consistency
+    navigateBackToPhoto();
   };
   
   // Check for double tap when screen is touched
@@ -144,6 +152,17 @@ export default function AnnotationPage({ isPreloaded = false }) {
     if (now - lastTap < DOUBLE_TAP_DELAY) {
       // This is a double tap
       e.preventDefault();
+      
+      // Always use center for consistent fade animation
+      const centerX = 50;
+      const centerY = 50;
+      
+      // Store position for shrink animation
+      sessionStorage.setItem('transition_position', JSON.stringify({
+        x: centerX,
+        y: centerY
+      }));
+      
       handleDoubleTap();
     } else {
       // This is the first tap, store the timestamp
@@ -162,6 +181,17 @@ export default function AnnotationPage({ isPreloaded = false }) {
     const DOUBLE_CLICK_DELAY = 300;
     if (now - lastTap < DOUBLE_CLICK_DELAY) {
       // This is a double click
+      
+      // Always use center for consistent fade animation
+      const centerX = 50;
+      const centerY = 50;
+      
+      // Store position for shrink animation
+      sessionStorage.setItem('transition_position', JSON.stringify({
+        x: centerX,
+        y: centerY
+      }));
+      
       handleDoubleTap();
     }
     setLastTap(now);
@@ -186,13 +216,8 @@ export default function AnnotationPage({ isPreloaded = false }) {
     
     // If swiping right, go back to photo page
     if (isRightSwipe) {
-      // Store timestamp for returning to photo page
-      sessionStorage.setItem('lastPhotoPosition', JSON.stringify({
-        timestamp: Date.now()
-      }));
-      
-      // Navigate immediately
-      navigate('/photo');
+      // Use the navigation function to maintain consistency
+      navigateBackToPhoto();
     }
   };
   

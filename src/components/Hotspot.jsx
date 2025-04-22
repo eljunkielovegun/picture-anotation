@@ -86,10 +86,10 @@ export default function Hotspot({
               <feGaussianBlur stdDeviation="0.8" />
             </filter>
             
-            {/* Outer glow gradient - gallery orange */}
+            {/* Outer glow gradient - off-white */}
             <radialGradient id={`glow-gradient-${animationId}`} cx="0.5" cy="0.5" r="0.5" fx="0.5" fy="0.5">
-              <stop offset="50%" stopColor="#f3993e" stopOpacity="0.7" /> {/* Gallery orange color */}
-              <stop offset="100%" stopColor="#f3993e" stopOpacity="0" />
+              <stop offset="50%" stopColor="#f5f5f0" stopOpacity="0.7" /> {/* Off-white color */}
+              <stop offset="100%" stopColor="#f5f5f0" stopOpacity="0" />
             </radialGradient>
           </defs>
           
@@ -107,12 +107,12 @@ export default function Hotspot({
             />
           </circle>
           
-          {/* Middle glow - orange */}
+          {/* Middle glow - off-white */}
           <circle 
             cx="12" 
             cy="12" 
             r="6" 
-            fill="#f3993e" /* Same orange as outer glow */
+            fill="#f5f5f0" /* Same off-white as outer glow */
             opacity="0.6"
             filter={`url(#glow-${animationId})`}
           >
@@ -128,12 +128,12 @@ export default function Hotspot({
             />
           </circle>
           
-          {/* Core dot with white fill - enlarged to cover inner glow ring */}
+          {/* Core dot with off-white fill - enlarged to cover inner glow ring */}
           <circle 
             cx="12" 
             cy="12" 
             r="5" /* Increased from 3.5 to 5 to cover more of the inner glow */
-            fill="white" /* White core */
+            fill="#f5f5f0" /* Off-white core (same as outer glow) */
             filter={`url(#core-blur-${animationId})`}
           >
             <animate 

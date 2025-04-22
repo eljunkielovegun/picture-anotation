@@ -6,13 +6,124 @@
   text-align: center;
 }
 
-
-/* Panel animation styles */
-@keyframes slideInFromRight {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(0); }
+/* Page transitions */
+.page-enter-from-right {
+  animation: slideInFromRight 650ms forwards;
 }
 
+.page-exit-to-left {
+  animation: slideOutToLeft 650ms forwards;
+}
+
+.page-enter-from-left {
+  animation: slideInFromLeft 650ms forwards;
+}
+
+.page-exit-to-right {
+  animation: slideOutToRight 650ms forwards;
+}
+
+.page-expand-from-center {
+  animation: expandFromCenter 650ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+.page-shrink-to-center {
+  animation: shrinkToCenter 650ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+.fade-out {
+  animation: fadeOut 650ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+.fade-in {
+  animation: fadeIn 650ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+/* Keyframe animations for page transitions */
+@keyframes slideInFromRight {
+  0% { transform: translateX(100%); opacity: 0.8; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutToLeft {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(-100%); opacity: 0.8; }
+}
+
+@keyframes slideInFromLeft {
+  0% { transform: translateX(-100%); opacity: 0.8; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutToRight {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0.8; }
+}
+
+@keyframes expandFromCenter {
+  0% { 
+    transform: scale(0.5); 
+    opacity: 0;
+    clip-path: circle(20% at var(--expand-x, 50%) var(--expand-y, 50%));
+  }
+  40% {
+    opacity: 0.6;
+  }
+  100% { 
+    transform: scale(1);
+    opacity: 1; 
+    clip-path: circle(150% at var(--expand-x, 50%) var(--expand-y, 50%));
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes shrinkToCenter {
+  0% { 
+    transform: scale(1);
+    opacity: 1; 
+    clip-path: circle(150% at var(--expand-x, 50%) var(--expand-y, 50%));
+  }
+  40% {
+    opacity: 0.4;
+    clip-path: circle(60% at var(--expand-x, 50%) var(--expand-y, 50%));
+  }
+  99% { 
+    transform: scale(0.5); 
+    opacity: 0;
+    clip-path: circle(5% at var(--expand-x, 50%) var(--expand-y, 50%));
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+    clip-path: circle(0% at var(--expand-x, 50%) var(--expand-y, 50%));
+    visibility: hidden;
+  }
+}
+
+/* Panel animation styles */
 .annotation-panel {
   animation: slideInFromRight 0.5s ease-out forwards;
   will-change: transform;
